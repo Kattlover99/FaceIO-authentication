@@ -1,0 +1,406 @@
+// React Typescript form using faceIO for face authentication
+
+// Hi there,
+
+// This is part of a two part series, where we are going to show how to use React and Typescript cuopled
+//with faceIO to signup and authenticate a user and consume user data in our site.
+
+//What is faceIO
+
+//FaceIO is a facial authentication framework to authenticate users via face recognition instead of the traditional
+//login/password. It is implemnted via a simple javascript snippet (like google tag) 
+
+//Why faceIO
+
+//we all no the complexity and work that goes into creating a way to authenticate users to your website
+//yet all we want to do is to register a user and be able to login the user eveery time they came back.
+//In comes faceIO with the eassiest way to add passwordless authentication to your web based application.
+//
+
+//In the first part of the series we 
+
+//are going to use React, Typescript, FaceIO, react-form-hook to 
+
+//create a user signup form and we will signup a user. Then in thwe second part of this series 
+//we are going to authenticate that user using FaceIO and pass that 
+//user data to the state and consume it in other components.
+
+// Let's begin
+
+//Initializing react, typescript and tailwindcss in our project using Vite.
+
+//I am going to use yarn so
+
+yarn create vite
+
+//follow the prompts
+
+//viteIntallation image
+
+//you can use yarn dev --host to host your project and be able to access it via multiple devices
+
+//let us add tailwindCSS to our project
+
+yarn add -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+
+//Go into src/tailwind.config.cjs and replace the contents with
+
+
+//tailwind.config.cjs
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+
+
+// run yarn dev
+//image2
+
+//let me show you how easy it is to add faceIO to your project
+
+//replace /index.html contents with
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FaceIO authentication using react + ts</title>
+  </head>
+  <body>
+    <script src="https://cdn.faceio.net/fio.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+// that's it you now have face io present in your project.
+
+
+
+//go to index.css and replace the contents with
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+//imge3
+
+//Go to app.tsx and replace it woth this content
+
+
+import './App.css';
+
+function App() {
+
+  return (
+    <div className='min-h-screen flex justify-center'>
+      <h1 className='text-3xl font-bold text-yellow-600'>
+        FaceIO authentication using react and typescript
+      </h1>
+    </div>
+  );
+}
+
+export default App;
+
+//image4
+
+
+// let' create a new folder named components and in it a file name SignupForm.tsx
+
+//image5
+
+//we will use react hook form to create our form let us add it to our project
+
+yarn add react-hook-form @hookform/resolvers yup
+
+// make the necessary imports
+
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+
+
+//let us now create a div where our form  will be
+
+const SignupForm = () => {
+  return (
+    <div className='max-w-md mx-auto mt-4 bg-yellow-100 p-8 border border-gray-3000'>
+      <h1 className='text-3xl font-bold text-blue-600 pb-5'>
+        Sign-up form using FaceIO
+      </h1>
+    </div>
+  );
+};
+
+//import the form into app.tsx file and make necessary changes
+
+//image7
+
+// let us  create the ui for form which I have taken the trouble to create for you
+// under the h1 tags add this form
+
+<form className='space-y-6'>
+        <div>
+          <label
+            htmlFor=''
+            className='text-sm font-bold backdrop:bold text-gray-600 block'
+          >
+            Name
+          </label>
+          <input
+            type='text'
+            placeholder='name'
+            className='w-full p-2 border border-blue-900 rounded mt-1'
+          />
+        </div>
+        <div>
+          <label
+            htmlFor=''
+            className='text-sm font-bold backdrop:bold text-gray-600 block'
+          >
+            Email
+          </label>
+          <input
+            type='text'
+            placeholder='email@mail.com'
+            className='w-full p-2 border border-blue-900 rounded mt-1'
+          />
+        </div>
+        <div>
+          <button className='w-full py-2 px-4 bg-blue-700 rounded-md text-white text-sm'>
+            Sign Up
+          </button>
+        </div>
+</form>
+
+
+//Now for the fun part of adding the logic
+//first let us create a new folder in the  folder src called @types 
+//in there we will make a new file user.d.ts and in there we will start to define
+// some types we will use through out our build
+
+/** src/@types/user.d.ts */
+
+interface Iuser {
+  name: string;
+  email: string;
+}
+
+
+//back to our form let us define the data that we are going to take from the user
+//and submit to faceIO to register the said user using yup. This should be done above the
+// SignForm declaration. This will also enable us 
+//to alert the user if any errors occur.
+
+const SignupSchema = yup
+  .object({
+    name: yup.string().required(),
+    email: yup.string().required(),
+  })
+  .required();
+
+
+//Inside the signupForm function let us use the useForm from react-hook-form to set up register, handleSubmit, errors
+
+const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<Iuser>({
+    resolver: yupResolver(SignupSchema),
+  });
+
+//let us also create a onSubmit function that will enable us to submit the data
+
+const onSubmit = (data: Iuser) => {
+    alert(JSON.stringify(data));
+
+    handleSignUp(data);
+  };
+
+// As you can see inside there is a handleSignUp function let us define it but before we do that let us kload 
+//face io into our page using a useEffect hook
+
+let faceio: any;
+  useEffect(() => {
+    faceio = new faceIO('fioxxxxxx');
+  }, []);
+
+//note the 'fioxxxxx' you should ensure that you have registered in face iO......
+
+  //now create a signup function that will submit the data to faceIO by calling the function faceIO enroll
+  const handleSignUp = async (user: Iuser): Promise<any> => {
+    try {
+      let response: any = await faceio.enroll({
+        locale: 'auto',
+        payload: {
+          name: `${user.name}`,
+          email: `${user.email}`,
+        },
+      });
+      alert(
+        ` Unique Facial ID: ${response.facialId}
+      Enrollment Date: ${response.timestamp}
+      Gender: ${response.details.gender}
+      Age Approximation: ${response.details.age}
+      payload: ${JSON.stringify(response.details)}`
+      );
+    } catch (error) {
+      alert('Unable to register you please refresh page and try again');
+    }
+  };
+
+
+//for more about the enroll method check this out
+
+// let us now update the form tags to now be able to take in the user data and submit it
+
+<form className='space-y-6' onSubmit={handleSubmit(onSubmit)}>
+//....
+<form/>
+
+//the input fields
+
+ <input 
+            type='text'
+            placeholder='name'
+            {...register('name')}
+            className='w-full p-2 border border-blue-900 rounded mt-1'
+          />
+          {errors.name && <p className='text-red-900'>{errors.name.message}</p>}
+
+//
+
+<input
+            type='text'
+            placeholder='email@mail.com'
+            {...register('email')}
+            className='w-full p-2 border border-blue-900 rounded mt-1'
+          />
+          {errors.email && (
+            <p className='text-red-900'>{errors.email.message}</p>
+          )}
+
+/** and with that we are done the whole sign up form looks like */
+
+
+
+
+import React, { useEffect } from 'react';
+
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+
+const SignupSchema = yup
+  .object({
+    name: yup.string().required(),
+    email: yup.string().required(),
+  })
+  .required();
+
+const SignupForm = () => {
+  let faceio: any;
+  useEffect(() => {
+    faceio = new faceIO('fioa48b7');
+  }, []);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<Iuser>({
+    resolver: yupResolver(SignupSchema),
+  });
+
+  //create  a submit function that will submit the data
+  const onSubmit = (data: Iuser) => {
+    alert(JSON.stringify(data));
+
+    handleSignUp(data);
+  };
+
+  //create a signup function that will submit the data to faceIO by calling the function faceIO enroll
+  const handleSignUp = async (user: Iuser): Promise<any> => {
+    try {
+      let response: any = await faceio.enroll({
+        locale: 'auto',
+        payload: {
+          name: `${user.name}`,
+          email: `${user.email}`,
+        },
+      });
+      alert(
+        ` Unique Facial ID: ${response.facialId}
+      Enrollment Date: ${response.timestamp}
+      Gender: ${response.details.gender}
+      Age Approximation: ${response.details.age}
+      payload: ${JSON.stringify(response.details)}`
+      );
+    } catch (error) {
+      alert('Unable to register you please refresh page and try again');
+    }
+  };
+
+  return (
+    <div className='max-w-md mx-auto mt-4 bg-yellow-100 p-8 border border-gray-3000'>
+      <h1 className='text-3xl font-bold text-blue-600 pb-5'>
+        Sign-up form using FaceIO
+      </h1>
+
+      <form className='space-y-6' onSubmit={handleSubmit(onSubmit)}>
+        <div>
+          <label
+            htmlFor=''
+            className='text-sm font-bold backdrop:bold text-gray-600 block'
+          >
+            Name
+          </label>
+          <input
+            type='text'
+            placeholder='name'
+            {...register('name')}
+            className='w-full p-2 border border-blue-900 rounded mt-1'
+          />
+          {errors.name && <p className='text-red-900'>{errors.name.message}</p>}
+        </div>
+        <div>
+          <label
+            htmlFor=''
+            className='text-sm font-bold backdrop:bold text-gray-600 block'
+          >
+            Email
+          </label>
+          <input
+            type='text'
+            placeholder='email@mail.com'
+            {...register('email')}
+            className='w-full p-2 border border-blue-900 rounded mt-1'
+          />
+          {errors.email && (
+            <p className='text-red-900'>{errors.email.message}</p>
+          )}
+        </div>
+        <div>
+          <button className='w-full py-2 px-4 bg-blue-700 rounded-md text-white text-sm'>
+            Sign Up
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default SignupForm;
+
+
+
+// the next part we are going to handle the login and pass the user to other components to be registered
